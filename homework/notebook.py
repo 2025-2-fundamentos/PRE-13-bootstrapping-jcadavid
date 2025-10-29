@@ -98,11 +98,42 @@ def run_simulation(n_runs):
     df = generate_data()
     experiments = run_experiments(df, n_runs)
     experiments["run"] = experiments["run"].astype(int)
-    experiments.to_csv("files/results/experiments.csv", index=False)
+    experiments.to_csv("../files/results/experiments.csv", index=False)
 
 
 #
-# Ejecuta la simulacion
+# Generación de estadísticas por cada variable
+#
+def compute_stats():
+
+    experiments = pd.read_csv("../files/results/experiments.csv")
+
+    #
+    # Extrae el coeficiente estimado para cada variable con el dataset
+    # original
+    current_values = experiments.loc[experiments["run"] == 0].copy()
+    current_values = current_values.drop(columns=["run"])
+    current_values = current_values.rename(columns={"value": "original"})
+    current_values = current_values.set_index("variable")
+
+    #
+    # Calcula los estadísticos descriptivos para cada variable
+    stats = experiments[["variable", "value"]].groupby(["variable"]).describe()
+    stats.columns = stats.columns.droplevel(0)
+
+    #
+    # Agrega el valor original
+    stats = stats.join(current_values, on="variable")
+
+    #
+    # Genera el reporte
+    with open("../files/results/stats.txt", "w") as file:
+        file.write(stats.to_string())
+    stats.to_csv("../files/results/stats.csv")
+
 run_simulation(n_runs=1000)
+compute_stats()
+
+
 
 
